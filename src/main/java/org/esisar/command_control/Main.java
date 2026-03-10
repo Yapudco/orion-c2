@@ -1,18 +1,27 @@
 package org.esisar.command_control;
 
-import io.javalin.Javalin; // Import propre
-import org.esisar.command_control.auth.*;
+import io.javalin.Javalin;
+
+
+
 
 public class Main {
     public static void main(String[] args) {
         Javalin app = Javalin.create().start(7000);
 
-        //Le serveur vérifie l'authentification A CHAQUE FOIS
-        //Sauf pour l'accès au endpoint /auth... sinon c'est con.
-        app.before(new CheckAuth());
+        //j'ai changé d'avis je fais du websocket
+        //et celui qui m'en empèche est un creuvard
+        app.ws("/", ws -> {
+            ws.onConnect(ctx ->{
+                System.out.println("Machine " + ctx.sessionId() + " connected");
+                ctx.send("ceci est un test");
+            });
+            ws.onClose(ctx ->{
+                System.out.println("Machine " + ctx.sessionId() + " closed");
+            });
+        });
 
-        //Tous les endpoints de l'API
-        app.get("/auth", ctx -> {new Authenticate();});
-        app.get("/test", ctx -> ctx.result("t'as surprenament bien codé ça! Bravo"));
+
+
     }
 }
