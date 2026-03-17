@@ -51,11 +51,9 @@ public class Parser {
 
         } else if (Objects.equals(command.get(0), "mkdir")) {
             if (command.size() > 1) {
-                // On crée le dossier à l'intérieur de notre mémoire (currentFile)
-                java.io.File nouveauDossier = new java.io.File(currentFile, command.get(1));
+                java.io.File newFile = new java.io.File(currentFile, command.get(1));
 
-                // La méthode native Java qui ne réveille aucun antivirus :
-                if (nouveauDossier.mkdir()) {
+                if (newFile.mkdir()) {
                     return "Succès : Dossier '" + command.get(1) + "' créé furtivement !\n";
                 } else {
                     return "Erreur : Impossible de créer le dossier.\n";
