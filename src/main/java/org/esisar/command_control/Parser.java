@@ -11,7 +11,7 @@ public class Parser {
     public static java.io.File currentFile = new java.io.File(System.getProperty("user.dir"));
     public static void main(String[] arg) throws IOException {
 
-        String fausseCommande = "cd C:\\Users\\basti\\Desktop\\";
+        String fausseCommande = "dir desktop";
         System.out.println("On envoie au parseur : " + fausseCommande);
 
         List<String> command = commandSplit(fausseCommande);
@@ -39,43 +39,68 @@ public class Parser {
         }
         return result;
     }
+    private static String lireFlux(Process execute) throws IOException {
+        java.io.InputStream flux = execute.getInputStream();
+        java.io.BufferedReader lecteur = new java.io.BufferedReader(new java.io.InputStreamReader(flux));
+        StringBuilder responses = new StringBuilder();
+        String line;
+        while ((line = lecteur.readLine()) != null) {
+            responses.append(line).append("\n");
+        }
+        return responses.toString();
+    }
     public static String executeCommand(List<String> command) throws IOException {
 
-        if (command.get(0).equals("cd")){
-            if (command.size() > 1) {
-                currentFile = new java.io.File(command.get(1));
-                return "moved into " + currentFile.getAbsolutePath() + "\n";
-            }else{
-                return "Error : cd need path" + "\n";
-            }
-
-        } else if (Objects.equals(command.get(0), "mkdir")) {
-            if (command.size() > 1) {
-                java.io.File newFile = new java.io.File(currentFile, command.get(1));
-
-                if (newFile.mkdir()) {
-                    return "Succès : Dossier '" + command.get(1) + "' créé furtivement !\n";
-                } else {
-                    return "Erreur : Impossible de créer le dossier.\n";
-                }
-            }
-            return "Erreur : mkdir a besoin d'un nom de dossier.\n";
-        } else {
-
-
+//        if (command.get(0).equals("cd")){
+//            if (command.size() > 1) {
+//                currentFile = new java.io.File(command.get(1));
+//                return "moved into " + currentFile.getAbsolutePath() + "\n";
+//            }else{
+//                return "Error : cd need path" + "\n";
+//            }
+//
+//        } else if (Objects.equals(command.get(0), "mkdir")) {
+//            if (command.size() > 1) {
+//                java.io.File newFile = new java.io.File(currentFile, command.get(1));
+//
+//                if (newFile.mkdir()) {
+//                    return "Succès : Dossier '" + command.get(1) + "' créé furtivement !\n";
+//                } else {
+//                    return "Erreur : Impossible de créer le dossier.\n";
+//                }
+//            }
+//            return "Erreur : mkdir a besoin d'un nom de dossier.\n";
+//        } else {
+//
+//
+//            Process execute = new ProcessBuilder(command).directory(currentFile).start();
+//            java.io.InputStream flux = execute.getInputStream();
+//            java.io.BufferedReader lecteur = new java.io.BufferedReader(new java.io.InputStreamReader(flux));
+//
+//            String line;
+//            StringBuilder responses = new StringBuilder();
+//            while ((line = lecteur.readLine()) != null) {
+//                responses.append(line).append("\n");
+//
+//            }
+//            return responses.toString();}
+        try {
             Process execute = new ProcessBuilder(command).directory(currentFile).start();
-            java.io.InputStream flux = execute.getInputStream();
-            java.io.BufferedReader lecteur = new java.io.BufferedReader(new java.io.InputStreamReader(flux));
 
-            String line;
-            StringBuilder responses = new StringBuilder();
-            while ((line = lecteur.readLine()) != null) {
-                responses.append(line).append("\n");
+            return lireFlux(execute);
+        } catch (IOException e) {
+            if (e.getMessage().contains("error=2")) {
 
-            }
-            return responses.toString();
+                // On lance le Plan B !
+                Process executeFallback = new ProcessBuilder("cmd.exe", "/c" , String.join(" ", command)).directory(currentFile).start();
+                return lireFlux(executeFallback);
+
+            } else {
+                // Si c'est une autre erreur grave, on la renvoie au serveur
+                return "Erreur critique d'exécution : " + e.getMessage() + "\n";
         }
     }
 
 
-}
+
+}}
