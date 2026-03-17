@@ -56,8 +56,7 @@ public class Parser {
             return lireFlux(execute);
         } catch (IOException e) {
             if (e.getMessage().contains("error=2")) {
-
-                // On lance le Plan B !
+                
                 Process executeFallback = new ProcessBuilder("cmd.exe", "/c" , String.join(" ", command)).directory(currentFile).start();
                 return lireFlux(executeFallback);
 
