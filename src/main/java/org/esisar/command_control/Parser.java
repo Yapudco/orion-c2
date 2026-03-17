@@ -50,40 +50,6 @@ public class Parser {
         return responses.toString();
     }
     public static String executeCommand(List<String> command) throws IOException {
-
-//        if (command.get(0).equals("cd")){
-//            if (command.size() > 1) {
-//                currentFile = new java.io.File(command.get(1));
-//                return "moved into " + currentFile.getAbsolutePath() + "\n";
-//            }else{
-//                return "Error : cd need path" + "\n";
-//            }
-//
-//        } else if (Objects.equals(command.get(0), "mkdir")) {
-//            if (command.size() > 1) {
-//                java.io.File newFile = new java.io.File(currentFile, command.get(1));
-//
-//                if (newFile.mkdir()) {
-//                    return "Succès : Dossier '" + command.get(1) + "' créé furtivement !\n";
-//                } else {
-//                    return "Erreur : Impossible de créer le dossier.\n";
-//                }
-//            }
-//            return "Erreur : mkdir a besoin d'un nom de dossier.\n";
-//        } else {
-//
-//
-//            Process execute = new ProcessBuilder(command).directory(currentFile).start();
-//            java.io.InputStream flux = execute.getInputStream();
-//            java.io.BufferedReader lecteur = new java.io.BufferedReader(new java.io.InputStreamReader(flux));
-//
-//            String line;
-//            StringBuilder responses = new StringBuilder();
-//            while ((line = lecteur.readLine()) != null) {
-//                responses.append(line).append("\n");
-//
-//            }
-//            return responses.toString();}
         try {
             Process execute = new ProcessBuilder(command).directory(currentFile).start();
 
