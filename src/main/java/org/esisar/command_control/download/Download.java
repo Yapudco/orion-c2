@@ -35,8 +35,8 @@ public class Download {
 
         private final Path cheminDestination;
         private final CountDownLatch latch;
+        private FileChannel channel; // Variable pour garder le fichier ouvert
 
-        // Le constructeur qui reçoit le nom du fichier et le verrou depuis le main
         public ClientWebSocketListener(String nomFichier, CountDownLatch latch) {
             this.cheminDestination = Path.of(nomFichier);
             this.latch = latch;
@@ -44,43 +44,70 @@ public class Download {
 
         @Override
         public void onOpen(WebSocket webSocket) {
-            WebSocket.Listener.super.onOpen(webSocket);
-            webSocket.request(1); // N'oubliez pas de demander le premier message !
+            try {
+                // 1. On ouvre le fichier au moment de la connexion
+                // Utilisation de TRUNCATE_EXISTING pour écraser le fichier s'il existe déjà
+                this.channel = FileChannel.open(cheminDestination,
+                        StandardOpenOption.CREATE,
+                        StandardOpenOption.WRITE,
+                        StandardOpenOption.TRUNCATE_EXISTING);
+
+                WebSocket.Listener.super.onOpen(webSocket);
+                webSocket.request(1);
+            } catch (Exception e) {
+                System.err.println("Erreur lors de l'ouverture du fichier : " + e.getMessage());
+                latch.countDown(); // Libérer le verrou en cas d'échec initial
+            }
         }
 
         @Override
         public CompletionStage<?> onBinary(WebSocket webSocket, ByteBuffer data, boolean last) {
-            try (FileChannel channel = FileChannel.open(cheminDestination,
-                    StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
-
-                channel.write(data);
+            try {
+                // 2. On écrit directement dans le canal déjà ouvert
+                while (data.hasRemaining()) {
+                    channel.write(data);
+                }
 
                 if (last) {
                     System.out.println("Téléchargement terminé avec succès sous : " + cheminDestination.toString());
-                    // Le fichier est complet, on libère le verrou !
+                    fermerCanal();
                     latch.countDown();
+                } else {
+                    // Demande le prochain message seulement si ce n'est pas le dernier
+                    webSocket.request(1);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                // En cas d'erreur d'écriture, on libère aussi pour éviter de bloquer à l'infini
+                fermerCanal();
                 latch.countDown();
             }
 
-            // Demande le prochain message
-            webSocket.request(1);
             return null;
         }
 
         @Override
         public void onError(WebSocket webSocket, Throwable error) {
             System.err.println("Erreur WebSocket : " + error.getMessage());
+            fermerCanal(); // Penser à fermer en cas d'erreur réseau
             latch.countDown();
         }
 
         @Override
         public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
+            fermerCanal(); // Sécurité au cas où la connexion se ferme inopinément
             latch.countDown();
             return null;
+        }
+
+        // Méthode utilitaire pour fermer proprement la ressource
+        private void fermerCanal() {
+            if (channel != null && channel.isOpen()) {
+                try {
+                    channel.close();
+                } catch (Exception e) {
+                    System.err.println("Erreur lors de la fermeture du fichier : " + e.getMessage());
+                }
+            }
         }
     }
 }
