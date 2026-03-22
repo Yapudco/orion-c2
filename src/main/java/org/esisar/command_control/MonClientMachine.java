@@ -48,15 +48,28 @@ public class MonClientMachine {
                                 throw new RuntimeException(e);
                             }
                         }
-                        
-                        //Execute une commande
-                        else if(!messageRecu.equals("Pong")) {
-                            try {
-                                Parser.executeCommand(messageRecu);
+                      //Execute une commande
+                        else if(messageRecu.startsWith("command")){
+                        	 String command = messageRecu.split(" ", 2)[1];
+                        	try {
+                                Parser.executeCommand(command);
                             } catch (IOException e) {
                                 throw new RuntimeException(e);
                             }
                         }
+                        //execute un Process
+                        else if(messageRecu.startsWith("launch")){
+                       	 String process = messageRecu.split(" ", 2)[1];
+                       	try {
+                               Parser.executeProcess(process);
+                           } catch (IOException e) {
+                               throw new RuntimeException(e);
+                           }
+                       }
+                        
+                        //Execute une commande
+                        else if(!messageRecu.equals("Pong")) {
+                            System.out.println("Action non valide");                        }
 
                         // Indique au WebSocket qu'on est prêt à recevoir le prochain message
                         webSocket.request(1);
