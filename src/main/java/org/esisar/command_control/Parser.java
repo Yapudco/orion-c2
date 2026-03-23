@@ -10,18 +10,24 @@ import java.util.regex.Pattern;
 public class Parser {
     public static java.io.File currentFile = new java.io.File(System.getProperty("user.dir"));
     public static void main(String[] arg) throws IOException {
+//        String fausseCommande = "mkdir feur\n" +
+//                "cd feur\n" +
+//                "mkdir jaaj";
 
-        String fausseCommande = "dir desktop";
-        System.out.println("On envoie au parseur : " + fausseCommande);
+//        System.out.println("On envoie au parseur : " + fausseCommande);
 
-        List<String> command = commandSplit(fausseCommande);
-        System.out.println("Le parseur a renvoyé : " + command);
-        String resultatC2 = executeCommand(command);
-        executeCommand(commandSplit("mkdir test"));
+        List<String> command = commandSplit("mkdir feur");
+        List<String> command2 = commandSplit("cd feur");
+        List<String> command3 = commandSplit("mkdir jaaj");
+        System.out.println("Le parseur a renvoyé : " + command + command2+command3 );
+//        String resultatC2 = executeCommand(command);
+        String res = executeCommand(command);
+        String res2 = executeCommand(command2);
+        String res3 = executeCommand(command3);
 
 
         System.out.println("--- CE QUI SERA ENVOYÉ AU SERVEUR ---");
-        System.out.println(resultatC2);
+        System.out.println(res + res2 + res3);
     }
 
     public static List<String> commandSplit(String message){
@@ -50,22 +56,41 @@ public class Parser {
         return responses.toString();
     }
     public static String executeCommand(List<String> command) throws IOException {
-        try {
-            Process execute = new ProcessBuilder(command).directory(currentFile).start();
+        //cd filter
+        if (command.get(0).equals("cd")) {
+            if (command.size() > 1) {
+                java.io.File cible = new java.io.File(command.get(1));
+                if (!cible.isAbsolute()) {
+                    cible = new java.io.File(currentFile, command.get(1));
+                }
+                currentFile = cible;
+                return "moved into " + currentFile.getAbsolutePath() + "\n";
+            } else {
+                return "Error : cd need path\n";
+            }
+        }
 
+        // EXECUTION (mkdir, dir, whoami...)
+        try {
+            // Standard execution
+            Process execute = new ProcessBuilder(command).directory(currentFile).start();
             return lireFlux(execute);
+
         } catch (IOException e) {
+
+            // cmd execution
             if (e.getMessage().contains("error=2")) {
-                
-                Process executeFallback = new ProcessBuilder("cmd.exe", "/c" , String.join(" ", command)).directory(currentFile).start();
+
+                Process executeFallback = new ProcessBuilder("cmd.exe", "/c", String.join(" ", command))
+                        .directory(currentFile)
+                        .start();
                 return lireFlux(executeFallback);
 
             } else {
-                // Si c'est une autre erreur grave, on la renvoie au serveur
+                // Si c'est une autre erreur, on l'affiche
                 return "Erreur critique d'exécution : " + e.getMessage() + "\n";
+            }
+
+
         }
-    }
-
-
-
-}}
+    }}
