@@ -16,7 +16,7 @@ public class MonClientMachine {
         HttpClient client = HttpClient.newHttpClient();
 
         WebSocket webSocket = client.newWebSocketBuilder()
-                .buildAsync(URI.create("ws://localhost:7000/"), new WebSocket.Listener() {
+                .buildAsync(URI.create("ws://"+args[0]+":7000/"), new WebSocket.Listener() {
 
                     @Override
                     public CompletionStage<?> onPong(WebSocket webSocket, ByteBuffer message){

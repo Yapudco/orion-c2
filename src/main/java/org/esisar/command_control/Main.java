@@ -43,7 +43,7 @@ public class Main {
 
                 // autre paramétre du form (peut être pas utile
                 String description = ctx.formParam("description");
-
+                System.out.println("Fichier '" + file.filename() + "' reçu avec succès ! ");
                 ctx.result("Fichier '" + file.filename() + "' reçu avec succès ! " +
                            "Description : " + description);
             } else {
